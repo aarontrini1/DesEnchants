@@ -1,0 +1,17 @@
+# Weapon Enchantments Configuration
+# Configure individual weapon enchantments here
+
+# Example enchantment configuration
+# enchantment-id:
+#   enabled: true
+#   display-name: "Enchantment Name"
+#   description:
+#     - "Line 1 of description"
+#     - "Line 2 of description"
+#   max-level: 3
+#   rarity: COMMON/RARE/LEGENDARY
+#   activation-chance: 100.0
+#   cooldown: 0
+#   applicable-to: [SWORD, AXE, BOW]
+
+# This file will be populated when you create weapon enchantments

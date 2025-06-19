@@ -1,0 +1,11 @@
+name: DesEnchants
+version: '1.0-SNAPSHOT'
+main: org.example.des.desEnchants.DesEnchants
+api-version: '1.20'
+commands:
+  de:
+    description: Main command for custom enchantments
+    usage: /de [help|list|give|reload|apply|remove|info]
+    aliases: [customenchants, enchants, desenchants, ce]
+    permission: desenchants.use
+    permission-message: You do not have permission to execute this command! (desenchants.use)

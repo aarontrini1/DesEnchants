@@ -1,0 +1,74 @@
+# DesEnchants Configuration File
+# Plugin by YourName
+
+settings:
+  # Enable debug mode for extra logging
+  debug: false
+
+  # Maximum number of custom enchantments per item
+  max-enchantments-per-item: 5
+
+  # Show enchantment descriptions in item lore
+  show-descriptions: true
+
+  # Currency type for purchasing enchantments (XP_LEVELS or VAULT)
+  currency-type: XP_LEVELS
+
+  # Enchantment book settings
+  enchant-book-settings:
+    # Show success/destroy rates on books
+    show-rates: true
+    # Format: {enchant} - Success: {success}% Destroy: {destroy}%
+    rate-format: "&7Success: &a{success}% &7Destroy: &c{destroy}%"
+
+# GUI Settings
+gui:
+  # Main menu title
+  main-title: "&5&l✦ Enchantments ✦"
+
+  # Category titles
+  armour-title: "&b&lArmour Enchantments"
+  weapons-title: "&c&lWeapon Enchantments"
+  tools-title: "&6&lTool Enchantments"
+
+  # Enable sounds
+  enable-sounds: true
+
+  # Sound settings
+  sounds:
+    open-gui: BLOCK_ENCHANTMENT_TABLE_USE
+    click-item: UI_BUTTON_CLICK
+    purchase-success: ENTITY_PLAYER_LEVELUP
+    purchase-fail: ENTITY_VILLAGER_NO
+    enchant-success: BLOCK_ANVIL_USE
+    enchant-fail: ENTITY_ITEM_BREAK
+
+# Enchantment Application Settings
+enchanting:
+  # Allow enchanting in anvil
+  use-anvil: false
+
+  # Drag and drop to enchant
+  drag-drop: true
+
+  # Show particles on successful enchant
+  show-particles: true
+
+  # Particle type
+  particle-type: ENCHANTMENT_TABLE
+
+# Dust Settings (for future implementation)
+dust:
+  # Angel Dust - increases success rate
+  angel-dust:
+    enabled: true
+    # Bonus success rate per dust level
+    bonus-per-level: 5
+    max-level: 10
+
+  # Demon Dust - decreases destroy rate
+  demon-dust:
+    enabled: true
+    # Destroy rate reduction per dust level
+    reduction-per-level: 5
+    max-level: 10

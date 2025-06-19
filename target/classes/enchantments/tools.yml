@@ -1,0 +1,17 @@
+# Tool Enchantments Configuration
+# Configure individual tool enchantments here
+
+# Example enchantment configuration
+# enchantment-id:
+#   enabled: true
+#   display-name: "Enchantment Name"
+#   description:
+#     - "Line 1 of description"
+#     - "Line 2 of description"
+#   max-level: 3
+#   rarity: COMMON/RARE/LEGENDARY
+#   activation-chance: 100.0
+#   cooldown: 0
+#   applicable-to: [PICKAXE, AXE, SHOVEL, HOE]
+
+# This file will be populated when you create tool enchantments
