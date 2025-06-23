@@ -72,37 +72,16 @@ public class AnvilGUI {
     }
 
     public void handleClick(int slot, ItemStack cursor) {
-        // Handle placing items in slots
-        if (slot == FIRST_SLOT || slot == SECOND_SLOT) {
-            // Allow placing/taking items
-            updateCombineButton();
+        // Allow all interactions with input/output slots
+        if (slot == FIRST_SLOT || slot == SECOND_SLOT || slot == RESULT_SLOT) {
+            // These slots are handled by normal inventory mechanics
+            plugin.getServer().getScheduler().runTaskLater(plugin, this::updateCombineButton, 1L);
             return;
         }
 
         // Handle combine button
         if (slot == COMBINE_BUTTON) {
             attemptCombine();
-            return;
-        }
-
-        // Handle result slot
-        if (slot == RESULT_SLOT) {
-            ItemStack result = inventory.getItem(RESULT_SLOT);
-            if (result != null) {
-                // Give result to player
-                if (player.getInventory().firstEmpty() != -1) {
-                    player.getInventory().addItem(result);
-                    inventory.setItem(RESULT_SLOT, null);
-                    inventory.setItem(FIRST_SLOT, null);
-                    inventory.setItem(SECOND_SLOT, null);
-                    updateCombineButton();
-
-                    // Play sound
-                    player.playSound(player.getLocation(), Sound.BLOCK_ANVIL_USE, 1.0f, 1.0f);
-                } else {
-                    plugin.getLanguageManager().sendMessage(player, "gui.purchase.inventory-full");
-                }
-            }
             return;
         }
 

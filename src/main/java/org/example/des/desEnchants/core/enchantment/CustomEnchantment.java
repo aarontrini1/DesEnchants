@@ -24,9 +24,9 @@ public abstract class CustomEnchantment {
     protected int cooldown = 0;
     protected List<String> description;
 
-    // Success and Destroy rates
-    private final int successRate;
-    private final int destroyRate;
+    // Success and Destroy rates - remove final to allow per-instance generation
+    private int successRate;
+    private int destroyRate;
 
     public CustomEnchantment(DesEnchants plugin, String id, String displayName,
                              int maxLevel, EnchantmentRarity rarity, EnchantmentTarget target) {
@@ -36,12 +36,16 @@ public abstract class CustomEnchantment {
         this.maxLevel = maxLevel;
         this.rarity = rarity;
         this.target = target;
+    }
 
-        // Generate random success/destroy rates
+    // Generate random rates for each book instance
+    public void generateRandomRates() {
         this.successRate = random.nextInt(101);
         this.destroyRate = random.nextInt(101);
     }
 
+    // Add method to get level-specific description
+    public abstract String getLevelSpecificDescription(int level);
     /**
      * Called when the enchantment effect should be triggered
      */

@@ -20,6 +20,7 @@ org\example\des\desEnchants\core\enchantment\EnchantmentTarget$12.class
 org\example\des\desEnchants\gui\CategoryGUI.class
 org\example\des\desEnchants\gui\AnvilGUI.class
 org\example\des\desEnchants\DesEnchants.class
+org\example\des\desEnchants\enchantments\weapons\shared\LightningEnchantment.class
 org\example\des\desEnchants\listeners\BlockBreakListener.class
 org\example\des\desEnchants\shared\effects\SoundHelper.class
 org\example\des\desEnchants\core\enchantment\EnchantmentTarget$6.class
@@ -48,6 +49,7 @@ org\example\des\desEnchants\managers\GUIManager.class
 org\example\des\desEnchants\core\enchantment\EnchantmentTarget$4.class
 org\example\des\desEnchants\shared\cooldown\CooldownManager.class
 org\example\des\desEnchants\enchantments\weapons\shared\LifestealEnchantment.class
+org\example\des\desEnchants\enchantments\tools\pickaxe\AutosmeltEnchantment.class
 org\example\des\desEnchants\core\events\EnchantmentApplyEvent.class
 org\example\des\desEnchants\core\enchantment\EnchantmentTarget$14.class
 org\example\des\desEnchants\core\enchantment\EnchantmentTarget$1.class

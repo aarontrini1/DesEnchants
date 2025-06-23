@@ -21,21 +21,26 @@ public class LifestealEnchantment extends CustomEnchantment {
     public LifestealEnchantment(DesEnchants plugin) {
         super(plugin, "lifesteal", "Lifesteal", 3, EnchantmentRarity.RARE, EnchantmentTarget.ALL_WEAPONS);
 
-        // Configure the enchantment
-        this.activationChance = 30.0; // 30% chance to activate
         this.cooldown = 0; // No cooldown
         this.description = Arrays.asList(
                 "§7Chance to steal health from",
-                "§7your enemies when attacking.",
-                "",
-                "§7Chance: §a" + activationChance + "%",
-                "§7Heal Amount: §a{level} HP"
+                "§7your enemies when attacking."
         );
     }
 
     @Override
+    public String getLevelSpecificDescription(int level) {
+        int chance = switch (level) {
+            case 1 -> 15;
+            case 2 -> 30;
+            case 3 -> 50;
+            default -> level * 15;
+        };
+        return "§7Chance: §a" + chance + "% §7Heal: §a" + level + " HP";
+    }
+
+    @Override
     public boolean canApplyTo(ItemStack item) {
-        // Only allow on swords and axes
         Material type = item.getType();
         return type.name().endsWith("_SWORD") || type.name().endsWith("_AXE");
     }
@@ -46,44 +51,40 @@ public class LifestealEnchantment extends CustomEnchantment {
             return false;
         }
 
-        // Make sure player is the attacker
         if (damageEvent.getDamager() != player) {
             return false;
         }
 
-        // Check if target is living entity
         if (!(damageEvent.getEntity() instanceof LivingEntity)) {
             return false;
         }
 
-        // Check activation chance
-        if (!canActivate(player)) {
+        // Calculate actual activation chance based on level
+        double actualChance = switch (level) {
+            case 1 -> 15.0;
+            case 2 -> 30.0;
+            case 3 -> 50.0;
+            default -> level * 15.0;
+        };
+
+        if (Math.random() * 100 > actualChance) {
             return false;
         }
 
-        // Calculate heal amount (1 HP per level)
         double healAmount = level;
         double damage = damageEvent.getFinalDamage();
-
-        // Can't steal more than damage dealt
         healAmount = Math.min(healAmount, damage);
 
-        // Heal the player
         double maxHealth = player.getAttribute(Attribute.GENERIC_MAX_HEALTH).getValue();
         double currentHealth = player.getHealth();
         double newHealth = Math.min(currentHealth + healAmount, maxHealth);
         player.setHealth(newHealth);
 
-        // Visual effects
         player.getWorld().spawnParticle(Particle.HEART,
                 player.getLocation().add(0, 1, 0), 5, 0.5, 0.5, 0.5, 0);
-
-        // Sound effect
         player.playSound(player.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 0.5f, 2.0f);
 
-        // Apply cooldown if any
         applyCooldown(player);
-
         return true;
     }
 }

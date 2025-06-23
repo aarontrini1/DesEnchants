@@ -6,18 +6,15 @@ import org.bukkit.Particle;
 import org.bukkit.Sound;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
-import org.bukkit.event.inventory.InventoryAction;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.ItemMeta;
 import org.example.des.desEnchants.DesEnchants;
 import org.example.des.desEnchants.core.enchantment.CustomEnchantment;
 import org.example.des.desEnchants.core.enchantment.DustType;
 import org.example.des.desEnchants.core.utils.EnchantmentUtils;
-import org.example.des.desEnchants.enchantments.tools.pickaxe.HasteEnchantment;
-import org.example.des.desEnchants.enchantments.weapons.shared.LifestealEnchantment;
 
 import java.util.Random;
 
@@ -30,56 +27,48 @@ public class EnchantmentListener implements Listener {
         this.plugin = plugin;
     }
 
-
-
-    @EventHandler
+    @EventHandler(priority = EventPriority.HIGH)
     public void onInventoryClick(InventoryClickEvent event) {
-        // Only handle drag-and-drop in player inventory
-        if (event.getInventory().getType() != InventoryType.CRAFTING &&
-                event.getInventory().getType() != InventoryType.PLAYER) {
-            return;
-        }
-
-        // Check if drag-and-drop is enabled
-        if (!plugin.getConfig().getBoolean("enchanting.drag-drop", true)) {
-            return;
-        }
-
-        // We're looking for when a player clicks an item with another item on cursor
-        if (event.getAction() != InventoryAction.SWAP_WITH_CURSOR &&
-                event.getAction() != InventoryAction.PLACE_ALL) {
-            return;
-        }
+        if (!(event.getWhoClicked() instanceof Player)) return;
 
         Player player = (Player) event.getWhoClicked();
-        ItemStack cursor = event.getCursor(); // The enchanted book
-        ItemStack current = event.getCurrentItem(); // The item to enchant
+        ItemStack item = event.getCurrentItem();
+        ItemStack book = event.getCursor();
 
-        if (cursor == null || current == null ||
-                cursor.getType() != Material.ENCHANTED_BOOK ||
-                current.getType() == Material.AIR) {
-            return;
+        // Skip if no items or in creative/custom inventory
+        if (item == null || book == null || book.getAmount() > 1 || item.getAmount() > 1) return;
+        if (event.getInventory().getType() == InventoryType.CREATIVE) return;
+        if (player.getGameMode() == org.bukkit.GameMode.CREATIVE) return;
+
+        // Check if drag-drop is enabled
+        if (!plugin.getConfig().getBoolean("enchanting.drag-drop", true)) return;
+
+        // Handle enchanted book application
+        if (book.getType() == Material.ENCHANTED_BOOK && !EnchantmentUtils.isEnchantmentBook(plugin, item)) {
+            CustomEnchantment enchantment = EnchantmentUtils.getEnchantmentFromBook(plugin, book);
+            if (enchantment != null) {
+                handleEnchantmentApplication(event, player, book, item, enchantment);
+                return;
+            }
         }
 
-        // Check if cursor is a custom enchanted book
-        CustomEnchantment enchantment = EnchantmentUtils.getEnchantmentFromBook(plugin, cursor);
-        if (enchantment == null) {
-            return;
+        // Handle dust application to book
+        DustType dustType = EnchantmentUtils.getDustType(book);
+        if (dustType != null && item.getType() == Material.ENCHANTED_BOOK) {
+            handleDustApplication(event, player, book, item, dustType);
         }
+    }
 
-        int level = EnchantmentUtils.getEnchantmentLevelFromBook(plugin, cursor);
+    private void handleEnchantmentApplication(InventoryClickEvent event, Player player, ItemStack book, ItemStack item, CustomEnchantment enchantment) {
+        int level = EnchantmentUtils.getEnchantmentLevelFromBook(plugin, book);
 
-        // Cancel the event
-        event.setCancelled(true);
-
-        // Check if enchantment can be applied to this item
-        if (!EnchantmentUtils.canApplyEnchantment(current, enchantment)) {
+        // Validation checks
+        if (!EnchantmentUtils.canApplyEnchantment(item, enchantment)) {
             plugin.getLanguageManager().sendMessage(player, "enchanting.invalid-item");
             return;
         }
 
-        // Check max enchantments
-        int currentEnchants = EnchantmentUtils.getEnchantmentCount(plugin, current);
+        int currentEnchants = EnchantmentUtils.getEnchantmentCount(plugin, item);
         int maxEnchants = plugin.getConfigManager().getMaxEnchantmentsPerItem();
 
         if (currentEnchants >= maxEnchants) {
@@ -87,108 +76,88 @@ public class EnchantmentListener implements Listener {
             return;
         }
 
-        // Check if item already has this enchantment
-        if (EnchantmentUtils.hasEnchantment(plugin, current, enchantment)) {
+        if (EnchantmentUtils.hasEnchantment(plugin, item, enchantment)) {
             plugin.getLanguageManager().sendMessage(player, "enchanting.already-has");
             return;
         }
 
-        // Calculate success/destroy chances
-        int successRate = enchantment.getSuccessRate();
-        int destroyRate = enchantment.getDestroyRate();
+        // Cancel the event now that we know we're processing it
+        event.setCancelled(true);
 
-        // Roll the dice
+        // Get success/destroy rates
+        int baseSuccessRate = EnchantmentUtils.getBookSuccessRate(plugin, book);
+        int baseDestroyRate = EnchantmentUtils.getBookDestroyRate(plugin, book);
+
+        int angelBonus = EnchantmentUtils.getAngelDustBonus(plugin, book);
+        int demonReduction = EnchantmentUtils.getDemonDustReduction(plugin, book);
+
+        int finalSuccessRate = Math.min(100, baseSuccessRate + angelBonus);
+        int finalDestroyRate = Math.max(0, baseDestroyRate - demonReduction);
+
         int roll = random.nextInt(100) + 1;
 
-        if (roll <= successRate) {
-            // Success! Apply the enchantment
-            ItemStack enchantedItem = EnchantmentUtils.addEnchantment(plugin, current, enchantment, level);
+        if (roll <= finalSuccessRate) {
+            // Success! Clone the item and add enchantment
+            ItemStack enchantedItem = item.clone();
+            EnchantmentUtils.addEnchantment(plugin, enchantedItem, enchantment, level);
+
+            // Set the enchanted item in the slot
             event.setCurrentItem(enchantedItem);
 
-            // Remove the book
+            // Remove the book from cursor
             player.setItemOnCursor(null);
 
             // Effects
             plugin.getLanguageManager().sendMessage(player, "enchanting.success",
                     enchantment.getRarity().format(enchantment.getDisplayName()));
 
-            // Particles
             if (plugin.getConfig().getBoolean("enchanting.show-particles", true)) {
                 player.getWorld().spawnParticle(Particle.ENCHANT,
                         player.getLocation().add(0, 1, 0), 30, 0.5, 0.5, 0.5, 0.1);
             }
 
-            // Sound
-            try {
-                Sound sound = Sound.valueOf(plugin.getConfig().getString("gui.sounds.enchant-success", "BLOCK_ANVIL_USE"));
-                player.playSound(player.getLocation(), sound, 1.0f, 1.0f);
-            } catch (IllegalArgumentException ignored) {}
+            player.playSound(player.getLocation(), Sound.BLOCK_ANVIL_USE, 1.0f, 1.0f);
 
-        } else if (roll > (100 - destroyRate)) {
+        } else if (roll > (100 - finalDestroyRate)) {
             // Destroyed!
             event.setCurrentItem(null);
             player.setItemOnCursor(null);
 
+            // Effects
             plugin.getLanguageManager().sendMessage(player, "enchanting.destroyed");
+            player.playSound(player.getLocation(), Sound.ENTITY_ITEM_BREAK, 1.0f, 0.5f);
 
-            // Sound
-            try {
-                Sound sound = Sound.valueOf(plugin.getConfig().getString("gui.sounds.enchant-fail", "ENTITY_ITEM_BREAK"));
-                player.playSound(player.getLocation(), sound, 1.0f, 0.5f);
-            } catch (IllegalArgumentException ignored) {}
+            if (plugin.getConfig().getBoolean("enchanting.show-particles", true)) {
+                player.getWorld().spawnParticle(Particle.SMOKE,
+                        player.getLocation().add(0, 1, 0), 30, 0.5, 0.5, 0.5, 0.1);
+            }
 
         } else {
-            // Failed but not destroyed
+            // Failed - only remove the book
             player.setItemOnCursor(null);
 
+            // Effects
             plugin.getLanguageManager().sendMessage(player, "enchanting.failed");
-
-            // Sound
-            try {
-                Sound sound = Sound.valueOf(plugin.getConfig().getString("gui.sounds.enchant-fail", "ENTITY_ITEM_BREAK"));
-                player.playSound(player.getLocation(), sound, 1.0f, 1.5f);
-            } catch (IllegalArgumentException ignored) {}
+            player.playSound(player.getLocation(), Sound.ENTITY_ITEM_BREAK, 1.0f, 1.5f);
         }
     }
 
-    @EventHandler
-    public void onDustApplication(InventoryClickEvent event) {
-        if (event.getInventory().getType() != InventoryType.CRAFTING &&
-                event.getInventory().getType() != InventoryType.PLAYER) {
-            return;
-        }
-
-        if (event.getAction() != InventoryAction.SWAP_WITH_CURSOR &&
-                event.getAction() != InventoryAction.PLACE_ALL) {
-            return;
-        }
-
-        Player player = (Player) event.getWhoClicked();
-        ItemStack cursor = event.getCursor(); // The dust
-        ItemStack current = event.getCurrentItem(); // The book
-
-        if (cursor == null || current == null) return;
-
-        // Check if cursor is dust
-        DustType dustType = EnchantmentUtils.getDustType(cursor);
-        if (dustType == null) return;
-
-        // Check if current item is enchanted book
-        if (current.getType() != Material.ENCHANTED_BOOK) return;
-
-        CustomEnchantment enchantment = EnchantmentUtils.getEnchantmentFromBook(plugin, current);
+    private void handleDustApplication(InventoryClickEvent event, Player player, ItemStack dust, ItemStack book, DustType dustType) {
+        CustomEnchantment enchantment = EnchantmentUtils.getEnchantmentFromBook(plugin, book);
         if (enchantment == null) return;
 
         event.setCancelled(true);
 
-        // Get dust percentage
-        int percentage = EnchantmentUtils.getDustPercentage(cursor);
+        int percentage = EnchantmentUtils.getDustPercentage(dust);
 
-        // Apply dust to book
-        ItemStack updatedBook = EnchantmentUtils.applyDustToBook(plugin, current, dustType, percentage);
+        // Clone the book and apply dust
+        ItemStack updatedBook = book.clone();
+        EnchantmentUtils.applyDustToBook(plugin, updatedBook, dustType, percentage);
+
+        // Set the updated book in the slot
         event.setCurrentItem(updatedBook);
 
-        // Remove dust
+        // Remove dust from cursor
         player.setItemOnCursor(null);
 
         // Effects
@@ -196,9 +165,7 @@ public class EnchantmentListener implements Listener {
                 " (+" + percentage + "%) to " + enchantment.getDisplayName() + "!"));
         player.playSound(player.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1.0f, 1.2f);
 
-        // Particles
         player.getWorld().spawnParticle(Particle.HAPPY_VILLAGER,
                 player.getLocation().add(0, 1, 0), 20, 0.5, 0.5, 0.5, 0.1);
     }
-
 }

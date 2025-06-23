@@ -1,6 +1,7 @@
 package org.example.des.desEnchants.core.utils;
 
 import de.tr7zw.changeme.nbtapi.NBTItem;
+import de.tr7zw.changeme.nbtapi.NBTCompound;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
@@ -47,12 +48,42 @@ public class EnchantmentUtils {
     }
 
     /**
+     * Get angel dust bonus from an enchanted book
+     */
+    public static int getAngelDustBonus(DesEnchants plugin, ItemStack book) {
+        if (book == null || book.getType() != Material.ENCHANTED_BOOK) {
+            return 0;
+        }
+
+        NBTItem nbtItem = new NBTItem(book);
+        if (!nbtItem.hasTag("DesEnchantBook")) {
+            return 0;
+        }
+
+        return nbtItem.getCompound("DesEnchantBook").getInteger("angelDustBonus");
+    }
+
+    /**
+     * Get demon dust reduction from an enchanted book
+     */
+    public static int getDemonDustReduction(DesEnchants plugin, ItemStack book) {
+        if (book == null || book.getType() != Material.ENCHANTED_BOOK) {
+            return 0;
+        }
+
+        NBTItem nbtItem = new NBTItem(book);
+        if (!nbtItem.hasTag("DesEnchantBook")) {
+            return 0;
+        }
+
+        return nbtItem.getCompound("DesEnchantBook").getInteger("demonDustReduction");
+    }
+
+    /**
      * Check if an enchantment can be applied to an item
      */
     public static boolean canApplyEnchantment(ItemStack item, CustomEnchantment enchantment) {
-        if (item == null || item.getType() == Material.AIR) {
-            return false;
-        }
+        // Removing dumb check till later TODO: Revisit check
 
         return enchantment.canApplyTo(item);
     }
@@ -116,7 +147,7 @@ public class EnchantmentUtils {
             return enchantments;
         }
 
-        var compound = nbtItem.getCompound("DesEnchants");
+        NBTCompound compound = nbtItem.getCompound("DesEnchants");
         for (String key : compound.getKeys()) {
             CustomEnchantment enchant = plugin.getEnchantmentManager().getEnchantment(key);
             if (enchant != null) {
@@ -128,7 +159,10 @@ public class EnchantmentUtils {
     }
 
     /**
-     * Update item lore to show enchantments
+     * Update item lore to show enchantments (names only, no descriptions)
+     */
+    /**
+     * Update item lore to show enchantments (names only, no descriptions)
      */
     private static void updateItemLore(DesEnchants plugin, ItemStack item) {
         ItemMeta meta = item.getItemMeta();
@@ -148,17 +182,10 @@ public class EnchantmentUtils {
                 CustomEnchantment enchant = entry.getKey();
                 int level = entry.getValue();
 
+                // Only show the enchantment name, no description
                 String enchantLine = enchant.getRarity().format(
                         enchant.getDisplayName() + " " + toRoman(level));
                 lore.add(index++, enchantLine);
-
-                // Add description if enabled
-                if (plugin.getConfigManager().showEnchantmentDescriptions() &&
-                        enchant.getDescription() != null) {
-                    for (String descLine : enchant.getDescription()) {
-                        lore.add(index++, ChatColor.GRAY + "  " + descLine);
-                    }
-                }
             }
 
             lore.add(index, ChatColor.GRAY + "" + ChatColor.STRIKETHROUGH + "---------------------");
@@ -198,6 +225,9 @@ public class EnchantmentUtils {
      * Create an enchanted book item
      */
     public static ItemStack createEnchantedBook(DesEnchants plugin, CustomEnchantment enchantment, int level) {
+        // Generate unique success/destroy rates for this book
+        enchantment.generateRandomRates();
+
         ItemStack book = new ItemStack(Material.ENCHANTED_BOOK);
         ItemMeta meta = book.getItemMeta();
 
@@ -207,7 +237,7 @@ public class EnchantmentUtils {
         List<String> lore = new ArrayList<>();
         lore.add(ChatColor.GRAY + "" + ChatColor.STRIKETHROUGH + "---------------------");
 
-        // Show success/destroy rates if enabled
+        // Show success/destroy rates
         if (plugin.getConfig().getBoolean("enchant-book-settings.show-rates", true)) {
             String rateFormat = plugin.getConfig().getString("enchant-book-settings.rate-format",
                     "&7Success: &a{success}% &7Destroy: &c{destroy}%");
@@ -220,12 +250,16 @@ public class EnchantmentUtils {
         lore.add(ChatColor.YELLOW + "Max Level: " + ChatColor.WHITE + enchantment.getMaxLevel());
         lore.add("");
 
+        // Add general description
         if (enchantment.getDescription() != null) {
             for (String line : enchantment.getDescription()) {
                 lore.add(ChatColor.GRAY + line);
             }
-            lore.add("");
         }
+
+        // Add level-specific description
+        lore.add(ChatColor.GRAY + enchantment.getLevelSpecificDescription(level));
+        lore.add("");
 
         lore.add(plugin.getLanguageManager().getMessage("gui.item-lore.drag-drop"));
         lore.add(ChatColor.GRAY + "" + ChatColor.STRIKETHROUGH + "---------------------");
@@ -235,14 +269,14 @@ public class EnchantmentUtils {
 
         // Store enchantment data in NBT
         NBTItem nbtItem = new NBTItem(book);
-        var compound = nbtItem.getOrCreateCompound("DesEnchantBook");
+        NBTCompound compound = nbtItem.getOrCreateCompound("DesEnchantBook");
         compound.setString("enchantment", enchantment.getId());
         compound.setInteger("level", level);
+        compound.setInteger("successRate", enchantment.getSuccessRate());
+        compound.setInteger("destroyRate", enchantment.getDestroyRate());
 
         return nbtItem.getItem();
     }
-
-    // Add these methods to EnchantmentUtils.java
 
     /**
      * Create a dust item
@@ -266,7 +300,7 @@ public class EnchantmentUtils {
 
         // Store dust data in NBT
         NBTItem nbtItem = new NBTItem(dust);
-        var compound = nbtItem.getOrCreateCompound("DesDust");
+        NBTCompound compound = nbtItem.getOrCreateCompound("DesDust");
         compound.setString("type", dustType.name());
         compound.setInteger("percentage", percentage);
 
@@ -305,47 +339,44 @@ public class EnchantmentUtils {
     /**
      * Apply dust to an enchanted book
      */
+    /**
+     * Apply dust to an enchanted book (modifies rates directly)
+     */
     public static ItemStack applyDustToBook(DesEnchants plugin, ItemStack book, DustType dustType, int percentage) {
         NBTItem nbtItem = new NBTItem(book);
-        var bookData = nbtItem.getOrCreateCompound("DesEnchantBook");
+        NBTCompound bookData = nbtItem.getOrCreateCompound("DesEnchantBook");
+
+        // Get current rates
+        int currentSuccess = bookData.getInteger("successRate");
+        int currentDestroy = bookData.getInteger("destroyRate");
 
         if (dustType == DustType.ANGEL_DUST) {
-            int current = bookData.getInteger("angelDustBonus");
-            bookData.setInteger("angelDustBonus", current + percentage);
+            // Update success rate directly
+            int newSuccess = Math.min(100, currentSuccess + percentage);
+            bookData.setInteger("successRate", newSuccess);
         } else {
-            int current = bookData.getInteger("demonDustReduction");
-            bookData.setInteger("demonDustReduction", current + percentage);
+            // Update destroy rate directly
+            int newDestroy = Math.max(0, currentDestroy - percentage);
+            bookData.setInteger("destroyRate", newDestroy);
         }
 
         ItemStack result = nbtItem.getItem();
 
-        // Update lore to show dust applied
+        // Update lore to show new rates
         ItemMeta meta = result.getItemMeta();
         List<String> lore = meta.getLore();
 
-        // Find the success/destroy rate line and update it
+        // Find and update the success/destroy rate line
         for (int i = 0; i < lore.size(); i++) {
             String line = ChatColor.stripColor(lore.get(i));
             if (line.contains("Success:") && line.contains("Destroy:")) {
-                CustomEnchantment enchant = getEnchantmentFromBook(plugin, result);
-                int angelBonus = bookData.getInteger("angelDustBonus");
-                int demonReduction = bookData.getInteger("demonDustReduction");
-
-                int finalSuccess = Math.min(100, enchant.getSuccessRate() + angelBonus);
-                int finalDestroy = Math.max(0, enchant.getDestroyRate() - demonReduction);
+                int finalSuccess = bookData.getInteger("successRate");
+                int finalDestroy = bookData.getInteger("destroyRate");
 
                 String rateFormat = plugin.getConfig().getString("enchant-book-settings.rate-format",
                         "&7Success: &a{success}% &7Destroy: &c{destroy}%");
                 rateFormat = rateFormat.replace("{success}", String.valueOf(finalSuccess))
                         .replace("{destroy}", String.valueOf(finalDestroy));
-
-                // Add dust indicators
-                if (angelBonus > 0) {
-                    rateFormat += " &b(+" + angelBonus + "%)";
-                }
-                if (demonReduction > 0) {
-                    rateFormat += " &c(-" + demonReduction + "%)";
-                }
 
                 lore.set(i, ChatColor.translateAlternateColorCodes('&', rateFormat));
                 break;
@@ -364,6 +395,50 @@ public class EnchantmentUtils {
     public static int getEnchantmentLevel(DesEnchants plugin, ItemStack item, CustomEnchantment enchantment) {
         Map<CustomEnchantment, Integer> enchants = getEnchantments(plugin, item);
         return enchants.getOrDefault(enchantment, 0);
+    }
+
+    /**
+     * Check if an item is an enchantment book
+     */
+    public static boolean isEnchantmentBook(DesEnchants plugin, ItemStack item) {
+        if (item == null || item.getType() != Material.ENCHANTED_BOOK) {
+            return false;
+        }
+
+        NBTItem nbtItem = new NBTItem(item);
+        return nbtItem.hasKey("DesEnchantBook");
+    }
+
+    /**
+     * Get success rate from an enchanted book
+     */
+    public static int getBookSuccessRate(DesEnchants plugin, ItemStack book) {
+        if (book == null || book.getType() != Material.ENCHANTED_BOOK) {
+            return 0;
+        }
+
+        NBTItem nbtItem = new NBTItem(book);
+        if (!nbtItem.hasKey("DesEnchantBook")) {
+            return 0;
+        }
+
+        return nbtItem.getCompound("DesEnchantBook").getInteger("successRate");
+    }
+
+    /**
+     * Get destroy rate from an enchanted book
+     */
+    public static int getBookDestroyRate(DesEnchants plugin, ItemStack book) {
+        if (book == null || book.getType() != Material.ENCHANTED_BOOK) {
+            return 0;
+        }
+
+        NBTItem nbtItem = new NBTItem(book);
+        if (!nbtItem.hasKey("DesEnchantBook")) {
+            return 0;
+        }
+
+        return nbtItem.getCompound("DesEnchantBook").getInteger("destroyRate");
     }
 
     /**

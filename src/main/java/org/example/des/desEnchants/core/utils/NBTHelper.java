@@ -21,7 +21,7 @@ public class NBTHelper {
      */
     public static boolean hasCompound(ItemStack item, String key) {
         NBTItem nbtItem = new NBTItem(item);
-        return nbtItem.hasTag(key);
+        return nbtItem.hasKey(key);
     }
 
     /**
@@ -46,7 +46,7 @@ public class NBTHelper {
      */
     public static String getString(ItemStack item, String compound, String key) {
         NBTItem nbtItem = new NBTItem(item);
-        if (!nbtItem.hasTag(compound)) return null;
+        if (!nbtItem.hasKey(compound)) return null;
         return nbtItem.getCompound(compound).getString(key);
     }
 
@@ -64,7 +64,7 @@ public class NBTHelper {
      */
     public static int getInt(ItemStack item, String compound, String key) {
         NBTItem nbtItem = new NBTItem(item);
-        if (!nbtItem.hasTag(compound)) return 0;
+        if (!nbtItem.hasKey(compound)) return 0;
         return nbtItem.getCompound(compound).getInteger(key);
     }
 
@@ -82,7 +82,7 @@ public class NBTHelper {
      */
     public static Set<String> getKeys(ItemStack item, String compound) {
         NBTItem nbtItem = new NBTItem(item);
-        if (!nbtItem.hasTag(compound)) return Set.of();
+        if (!nbtItem.hasKey(compound)) return Set.of();
         return nbtItem.getCompound(compound).getKeys();
     }
 }

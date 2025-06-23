@@ -204,6 +204,7 @@ public class MainEnchantmentGUI {
     }
 
     public void open() {
+        plugin.getGuiManager().setOpenGUI(player, "main");  // <-- THIS LINE fixes the issue
         player.openInventory(inventory);
 
         // Play sound if enabled

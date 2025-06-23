@@ -5,8 +5,11 @@ import org.bukkit.inventory.ItemStack;
 import org.example.des.desEnchants.DesEnchants;
 import org.example.des.desEnchants.core.enchantment.CustomEnchantment;
 import org.example.des.desEnchants.core.enchantment.EnchantmentRarity;
+import org.example.des.desEnchants.enchantments.armor.chestplate.PhoenixEnchantment;
+import org.example.des.desEnchants.enchantments.tools.pickaxe.AutosmeltEnchantment;
 import org.example.des.desEnchants.enchantments.tools.pickaxe.HasteEnchantment;
 import org.example.des.desEnchants.enchantments.weapons.shared.LifestealEnchantment;
+import org.example.des.desEnchants.enchantments.weapons.shared.LightningEnchantment;
 
 import java.util.*;
 
@@ -42,11 +45,16 @@ public class EnchantmentManager {
     }
 
     public void loadEnchantments() {
-        // Register sword enchantments
-        registerEnchantment(new LifestealEnchantment(plugin));
+        // Armor enchantments
+        registerEnchantment(new PhoenixEnchantment(plugin));
 
-        // Register pickaxe enchantments
+        // Weapon enchantments
+        registerEnchantment(new LifestealEnchantment(plugin));
+        registerEnchantment(new LightningEnchantment(plugin));
+
+        // Tool enchantments
         registerEnchantment(new HasteEnchantment(plugin));
+        registerEnchantment(new AutosmeltEnchantment(plugin));
 
         plugin.getLogger().info("Loaded " + enchantments.size() + " custom enchantments");
     }

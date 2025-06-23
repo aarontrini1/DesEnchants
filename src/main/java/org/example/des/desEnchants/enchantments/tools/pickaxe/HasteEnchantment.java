@@ -29,6 +29,11 @@ public class HasteEnchantment extends CustomEnchantment {
     }
 
     @Override
+    public String getLevelSpecificDescription(int level) {
+        return "§7Heal: §a10 HP §7Cooldown: §a5 minutes";
+    }
+
+    @Override
     public boolean onTrigger(Event event, Player player, ItemStack item, int level) {
         if (!(event instanceof BlockBreakEvent)) {
             return false;

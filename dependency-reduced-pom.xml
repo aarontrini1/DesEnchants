@@ -33,6 +33,7 @@
               <goal>shade</goal>
             </goals>
             <configuration>
+              <createDependencyReducedPom>true</createDependencyReducedPom>
               <relocations>
                 <relocation>
                   <pattern>de.tr7zw.changeme.nbtapi</pattern>

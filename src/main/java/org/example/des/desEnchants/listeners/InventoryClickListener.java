@@ -159,19 +159,19 @@ public class InventoryClickListener implements Listener {
 
         int slot = event.getSlot();
 
-        // Allow interaction with input slots
-        if (slot == 11 || slot == 15) {
-            // Let the event happen normally
+        // Allow normal inventory interactions with input/output slots
+        if (slot == 11 || slot == 15 || slot == 22) {
+            // Don't cancel - let normal inventory mechanics work
             plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
                 anvilGUI.updateCombineButton();
             }, 1L);
             return;
         }
 
-        // Cancel other clicks
+        // Cancel all other slots
         event.setCancelled(true);
 
-        // Handle other slots
+        // Let AnvilGUI handle the click
         anvilGUI.handleClick(slot, event.getCursor());
     }
 
@@ -224,8 +224,7 @@ public class InventoryClickListener implements Listener {
             } catch (IllegalArgumentException ignored) {}
         }
 
-        // Close inventory
-        player.closeInventory();
+        // Don't close inventory - let player buy multiple items
     }
 
     private void handleDustPurchase(Player player, DustType dustType) {
@@ -262,8 +261,7 @@ public class InventoryClickListener implements Listener {
         // Play success sound
         player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1.0f, 1.5f);
 
-        // Close inventory
-        player.closeInventory();
+        // Don't close inventory - let player buy multiple items
     }
 
     private String getCategoryFromTarget(String targetName) {
