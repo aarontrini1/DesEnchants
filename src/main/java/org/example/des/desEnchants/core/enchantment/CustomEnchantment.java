@@ -1,8 +1,10 @@
 package org.example.des.desEnchants.core.enchantment;
 
+import org.bukkit.NamespacedKey;
+import org.bukkit.Sound;
 import org.bukkit.entity.Player;
-import org.bukkit.event.Event;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.persistence.PersistentDataType;
 import org.example.des.desEnchants.DesEnchants;
 
 import java.util.List;
@@ -11,95 +13,117 @@ import java.util.Random;
 public abstract class CustomEnchantment {
 
     protected final DesEnchants plugin;
+    protected final Random random = new Random();
+
     private final String id;
     private final String displayName;
     private final int maxLevel;
     private final EnchantmentRarity rarity;
     private final EnchantmentTarget target;
-    private final Random random = new Random();
-
-    // Configuration values
-    protected boolean enabled = true;
-    protected double activationChance = 100.0;
-    protected int cooldown = 0;
-    protected List<String> description;
-
-    // Success and Destroy rates - remove final to allow per-instance generation
-    private int successRate;
-    private int destroyRate;
+    private final List<String> description;
+    private final Sound applySound;
+    private final int baseChance;
+    private final int chancePerLevel;
+    private boolean enabled = true;
 
     public CustomEnchantment(DesEnchants plugin, String id, String displayName,
-                             int maxLevel, EnchantmentRarity rarity, EnchantmentTarget target) {
+                             int maxLevel, EnchantmentRarity rarity,
+                             EnchantmentTarget target, List<String> description) {
         this.plugin = plugin;
-        this.id = id;
+        this.id = id.toLowerCase();
         this.displayName = displayName;
         this.maxLevel = maxLevel;
         this.rarity = rarity;
         this.target = target;
+        this.description = description;
+        this.applySound = Sound.ENTITY_EXPERIENCE_ORB_PICKUP;
+        this.baseChance = 100;
+        this.chancePerLevel = 0;
     }
 
-    // Generate random rates for each book instance
-    public void generateRandomRates() {
-        this.successRate = random.nextInt(101);
-        this.destroyRate = random.nextInt(101);
+    public CustomEnchantment(DesEnchants plugin, String id, String displayName,
+                             int maxLevel, EnchantmentRarity rarity,
+                             EnchantmentTarget target, List<String> description,
+                             Sound applySound, int baseChance, int chancePerLevel) {
+        this.plugin = plugin;
+        this.id = id.toLowerCase();
+        this.displayName = displayName;
+        this.maxLevel = maxLevel;
+        this.rarity = rarity;
+        this.target = target;
+        this.description = description;
+        this.applySound = applySound;
+        this.baseChance = baseChance;
+        this.chancePerLevel = chancePerLevel;
     }
 
-    // Add method to get level-specific description
-    public abstract String getLevelSpecificDescription(int level);
-    /**
-     * Called when the enchantment effect should be triggered
-     */
-    public abstract boolean onTrigger(Event event, Player player, ItemStack item, int level);
+    // Abstract method for enchantment-specific initialization
+    public abstract void initialize();
 
-    /**
-     * Check if this enchantment can be applied to an item
-     */
-    public boolean canApplyTo(ItemStack item) {
-        return target.isValidItem(item);
+    // Check if enchantment should activate based on chance
+    public boolean shouldActivate(int level) {
+        if (baseChance >= 100 && chancePerLevel == 0) return true;
+
+        int chance = baseChance + (chancePerLevel * (level - 1));
+        return random.nextInt(100) < chance;
     }
 
-    /**
-     * Check if the enchantment effect can activate
-     */
-    protected boolean canActivate(Player player) {
-        // Check cooldown
-        if (cooldown > 0 && plugin.getCooldownManager().isOnCooldown(player, id)) {
-            return false;
-        }
-
-        // Check activation chance
-        if (Math.random() * 100 > activationChance) {
-            return false;
-        }
-
-        return true;
+    // Check if item can be enchanted
+    public boolean canEnchantItem(ItemStack item) {
+        return target != null && target.canEnchant(item);
     }
 
-    /**
-     * Apply cooldown after successful effect activation
-     */
-    protected void applyCooldown(Player player) {
-        if (cooldown > 0) {
-            plugin.getCooldownManager().setCooldown(player, id, cooldown);
-        }
+    // Check if player has permission
+    public boolean hasPermission(Player player) {
+        return player.hasPermission("desenchants.enchantment." + id);
     }
 
-    // All the getters...
-    public String getId() { return id; }
-    public String getDisplayName() { return displayName; }
-    public int getMaxLevel() { return maxLevel; }
-    public EnchantmentRarity getRarity() { return rarity; }
-    public EnchantmentTarget getTarget() { return target; }
-    public boolean isEnabled() { return enabled; }
-    public double getActivationChance() { return activationChance; }
-    public int getCooldown() { return cooldown; }
-    public List<String> getDescription() { return description; }
-    public int getSuccessRate() { return successRate; }
-    public int getDestroyRate() { return destroyRate; }
+    // Store data on item
+    protected void storeData(ItemStack item, String key, String value) {
+        NamespacedKey dataKey = new NamespacedKey(plugin, "enchant_" + id + "_" + key);
+        item.getItemMeta().getPersistentDataContainer().set(dataKey, PersistentDataType.STRING, value);
+    }
 
-    // Setters for configuration
-    public void setEnabled(boolean enabled) { this.enabled = enabled; }
-    public void setActivationChance(double chance) { this.activationChance = chance; }
-    public void setCooldown(int cooldown) { this.cooldown = cooldown; }
-    public void setDescription(List<String> description) { this.description = description; }
+    // Retrieve data from item
+    protected String retrieveData(ItemStack item, String key) {
+        NamespacedKey dataKey = new NamespacedKey(plugin, "enchant_" + id + "_" + key);
+        return item.getItemMeta().getPersistentDataContainer().get(dataKey, PersistentDataType.STRING);
+    }
+
+    // Getters
+    public String getId() {
+        return id;
+    }
+
+    public String getDisplayName() {
+        return displayName;
+    }
+
+    public int getMaxLevel() {
+        return maxLevel;
+    }
+
+    public EnchantmentRarity getRarity() {
+        return rarity;
+    }
+
+    public EnchantmentTarget getTarget() {
+        return target;
+    }
+
+    public List<String> getDescription() {
+        return description;
+    }
+
+    public Sound getApplySound() {
+        return applySound;
+    }
+
+    public boolean isEnabled() {
+        return enabled;
+    }
+
+    public void setEnabled(boolean enabled) {
+        this.enabled = enabled;
+    }
 }

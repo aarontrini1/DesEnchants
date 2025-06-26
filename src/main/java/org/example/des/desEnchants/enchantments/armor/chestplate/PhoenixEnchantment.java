@@ -1,10 +1,9 @@
 package org.example.des.desEnchants.enchantments.armor.chestplate;
 
-import org.bukkit.Particle;
-import org.bukkit.Sound;
 import org.bukkit.entity.Player;
-import org.bukkit.event.Event;
-import org.bukkit.event.entity.EntityDamageEvent;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.Listener;
+import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
@@ -12,78 +11,80 @@ import org.example.des.desEnchants.DesEnchants;
 import org.example.des.desEnchants.core.enchantment.CustomEnchantment;
 import org.example.des.desEnchants.core.enchantment.EnchantmentRarity;
 import org.example.des.desEnchants.core.enchantment.EnchantmentTarget;
-import org.example.des.desEnchants.shared.effects.ParticleHelper;
-import org.example.des.desEnchants.shared.effects.SoundHelper;
 
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
 
-public class PhoenixEnchantment extends CustomEnchantment {
+public class PhoenixEnchantment extends CustomEnchantment implements Listener {
+
+    private final Map<UUID, Long> cooldowns = new HashMap<>();
+    private final long cooldownTime = 300000; // 5 minutes in milliseconds
 
     public PhoenixEnchantment(DesEnchants plugin) {
-        super(plugin, "phoenix", "Phoenix", 1, EnchantmentRarity.LEGENDARY, EnchantmentTarget.CHESTPLATE);
-
-        this.activationChance = 100.0; // Always activates when conditions are met
-        this.cooldown = 3000; // 5 minute cooldown
-        this.description = Arrays.asList(
-                "§7Rise from the ashes when",
-                "§7you would have died.",
-                "",
-                "§7Heal Amount: §a10 HP",
-                "§7Effects: §aFire Resistance, Regen",
-                "§7Cooldown: §a5 minutes"
-        );
+        super(plugin, "phoenix", "&6Phoenix", 3,
+                EnchantmentRarity.LEGENDARY,
+                EnchantmentTarget.CHESTPLATE,
+                Arrays.asList(
+                        "&7Chance to revive with full health",
+                        "&7and temporary buffs upon death.",
+                        "&7Cooldown: 5 minutes"
+                ));
     }
 
     @Override
-    public String getLevelSpecificDescription(int level) {
-        return "§7Heal: §a10 HP §7Cooldown: §a5 minutes";
+    public void initialize() {
+        // Any initialization code specific to this enchantment
     }
 
-    @Override
-    public boolean onTrigger(Event event, Player player, ItemStack item, int level) {
-        if (!(event instanceof EntityDamageEvent damageEvent)) {
-            return false;
+    @EventHandler
+    public void onPlayerDeath(PlayerDeathEvent event) {
+        Player player = event.getEntity();
+        ItemStack chestplate = player.getInventory().getChestplate();
+
+        if (chestplate == null) return;
+
+        int level = plugin.getEnchantmentManager().getEnchantmentLevel(chestplate, this);
+        if (level == 0) return;
+
+        // Check cooldown
+        UUID uuid = player.getUniqueId();
+        if (cooldowns.containsKey(uuid)) {
+            long timeLeft = cooldowns.get(uuid) - System.currentTimeMillis();
+            if (timeLeft > 0) {
+                return; // Still on cooldown
+            }
         }
 
-        // Check if damage would kill the player
-        double finalDamage = damageEvent.getFinalDamage();
-        double health = player.getHealth();
+        // Check activation chance
+        if (!shouldActivate(level)) return;
 
-        if (health - finalDamage > 0.5) {
-            return false; // Player won't die
+        // Cancel death
+        event.setCancelled(true);
+
+        // Revive player
+        player.setHealth(player.getMaxHealth());
+        player.setFoodLevel(20);
+        player.setSaturation(20);
+
+        // Apply effects based on level
+        int duration = 200 + (level * 100); // 10-25 seconds
+        player.addPotionEffect(new PotionEffect(PotionEffectType.FIRE_RESISTANCE, duration, 0));
+        player.addPotionEffect(new PotionEffect(PotionEffectType.REGENERATION, duration, level - 1));
+
+        if (level >= 2) {
+            player.addPotionEffect(new PotionEffect(PotionEffectType.ABSORPTION, duration, 1));
         }
 
-        // Check if can activate
-        if (!canActivate(player)) {
-            return false;
+        if (level >= 3) {
+            player.addPotionEffect(new PotionEffect(PotionEffectType.RESISTANCE, duration, 0));
         }
 
-        // Cancel the death
-        damageEvent.setCancelled(true);
+        // Set cooldown
+        cooldowns.put(uuid, System.currentTimeMillis() + cooldownTime);
 
-        // Set health to 10
-        player.setHealth(10.0);
-
-        // Apply effects
-        player.addPotionEffect(new PotionEffect(PotionEffectType.FIRE_RESISTANCE, 600, 1)); // 30 seconds
-        player.addPotionEffect(new PotionEffect(PotionEffectType.REGENERATION, 200, 2)); // 10 seconds
-        player.addPotionEffect(new PotionEffect(PotionEffectType.ABSORPTION, 600, 1)); // 30 seconds
-
-        // Visual effects
-        ParticleHelper.playHelix(player, Particle.FLAME, 1.5, 2.0, 50);
-        ParticleHelper.playBurst(player.getLocation(), Particle.LAVA, 30, 0.5);
-
-        // Sound effects
-        SoundHelper.playAtLocation(player.getLocation(), Sound.ENTITY_ENDER_DRAGON_FLAP, 1.0f, 0.5f);
-        SoundHelper.playAtLocation(player.getLocation(), Sound.ENTITY_BLAZE_AMBIENT, 1.0f, 1.0f);
-        player.playSound(player.getLocation(), Sound.ITEM_TOTEM_USE, 1.0f, 1.0f);
-
-        // Message
-        player.sendMessage(plugin.prefix + "§6§lPhoenix §7has saved you from death!");
-
-        // Apply cooldown
-        applyCooldown(player);
-
-        return true;
+        // Send message
+        player.sendMessage(plugin.getLanguageManager().getMessage("phoenix-activated"));
     }
 }

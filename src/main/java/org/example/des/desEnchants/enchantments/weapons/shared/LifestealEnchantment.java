@@ -5,6 +5,7 @@ import org.bukkit.attribute.Attribute;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Event;
+import org.bukkit.event.EventHandler;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.Particle;
@@ -19,16 +20,13 @@ import java.util.Arrays;
 public class LifestealEnchantment extends CustomEnchantment {
 
     public LifestealEnchantment(DesEnchants plugin) {
-        super(plugin, "lifesteal", "Lifesteal", 3, EnchantmentRarity.RARE, EnchantmentTarget.ALL_WEAPONS);
-
-        this.cooldown = 0; // No cooldown
-        this.description = Arrays.asList(
+        super(plugin, "lifesteal", "Lifesteal", 3, EnchantmentRarity.RARE, EnchantmentTarget.WEAPON, Arrays.asList(
                 "§7Chance to steal health from",
                 "§7your enemies when attacking."
-        );
+        ));
+
     }
 
-    @Override
     public String getLevelSpecificDescription(int level) {
         int chance = switch (level) {
             case 1 -> 15;
@@ -39,13 +37,12 @@ public class LifestealEnchantment extends CustomEnchantment {
         return "§7Chance: §a" + chance + "% §7Heal: §a" + level + " HP";
     }
 
-    @Override
     public boolean canApplyTo(ItemStack item) {
         Material type = item.getType();
         return type.name().endsWith("_SWORD") || type.name().endsWith("_AXE");
     }
 
-    @Override
+    @EventHandler
     public boolean onTrigger(Event event, Player player, ItemStack item, int level) {
         if (!(event instanceof EntityDamageByEntityEvent damageEvent)) {
             return false;

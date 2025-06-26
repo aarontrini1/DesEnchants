@@ -4,6 +4,8 @@ import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Event;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.inventory.ItemStack;
 import org.example.des.desEnchants.DesEnchants;
@@ -16,19 +18,19 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
-public class AutosmeltEnchantment extends CustomEnchantment {
+public class AutosmeltEnchantment extends CustomEnchantment implements Listener {
 
     private final Map<Material, Material> smeltMap = new HashMap<>();
 
     public AutosmeltEnchantment(DesEnchants plugin) {
-        super(plugin, "autosmelt", "Autosmelt", 1, EnchantmentRarity.RARE, EnchantmentTarget.PICKAXE);
+        super(plugin, "autosmelt", "Autosmelt", 1,
+                EnchantmentRarity.RARE,
+                EnchantmentTarget.PICKAXE,
+                Arrays.asList(
+                        "§7Automatically smelts ores",
+                        "§7when you mine them."
+                ));
 
-        this.activationChance = 100.0; // Always active
-        this.cooldown = 0;
-        this.description = Arrays.asList(
-                "§7Automatically smelts ores",
-                "§7when you mine them."
-        );
 
         // Initialize smelt mappings
         smeltMap.put(Material.IRON_ORE, Material.IRON_INGOT);
@@ -47,12 +49,16 @@ public class AutosmeltEnchantment extends CustomEnchantment {
     }
 
     @Override
+    public void initialize() {
+        // Any initialization code specific to this enchantment
+    }
+
     public String getLevelSpecificDescription(int level) {
         return "§7Smelts all compatible blocks";
     }
 
-    @Override
-    public boolean onTrigger(Event event, Player player, ItemStack item, int level) {
+    @EventHandler
+    public boolean onTrigger(BlockBreakEvent event, Player player, ItemStack item, int level) {
         if (!(event instanceof BlockBreakEvent blockBreakEvent)) {
             return false;
         }

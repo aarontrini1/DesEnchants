@@ -2,6 +2,8 @@ package org.example.des.desEnchants.enchantments.tools.pickaxe;
 
 import org.bukkit.entity.Player;
 import org.bukkit.event.Event;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.potion.PotionEffect;
@@ -13,27 +15,22 @@ import org.example.des.desEnchants.core.enchantment.EnchantmentTarget;
 
 import java.util.Arrays;
 
-public class HasteEnchantment extends CustomEnchantment {
+public class HasteEnchantment extends CustomEnchantment implements Listener {
 
     public HasteEnchantment(DesEnchants plugin) {
-        super(plugin, "haste", "Haste", 3, EnchantmentRarity.COMMON, EnchantmentTarget.PICKAXE);
-
-        this.activationChance = 100.0; // Always active
-        this.cooldown = 0;
-        this.description = Arrays.asList(
+        super(plugin, "haste", "Haste", 3, EnchantmentRarity.COMMON, EnchantmentTarget.PICKAXE, Arrays.asList(
                 "§7Gives haste effect while",
                 "§7mining with this pickaxe.",
                 "",
                 "§7Haste Level: §a{level}"
-        );
+        ));
     }
 
-    @Override
     public String getLevelSpecificDescription(int level) {
         return "§7Heal: §a10 HP §7Cooldown: §a5 minutes";
     }
 
-    @Override
+    @EventHandler
     public boolean onTrigger(Event event, Player player, ItemStack item, int level) {
         if (!(event instanceof BlockBreakEvent)) {
             return false;
@@ -50,5 +47,10 @@ public class HasteEnchantment extends CustomEnchantment {
         ));
 
         return true;
+    }
+
+    @Override
+    public void initialize() {
+
     }
 }

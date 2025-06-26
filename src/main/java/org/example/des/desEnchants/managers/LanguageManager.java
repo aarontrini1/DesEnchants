@@ -1,77 +1,95 @@
 package org.example.des.desEnchants.managers;
 
-import org.bukkit.ChatColor;
-import org.bukkit.command.CommandSender;
+import net.md_5.bungee.api.ChatColor;
 import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.entity.Player;
 import org.example.des.desEnchants.DesEnchants;
 
-import java.util.List;
-import java.util.stream.Collectors;
+import java.util.HashMap;
+import java.util.Map;
 
 public class LanguageManager {
 
     private final DesEnchants plugin;
-    private FileConfiguration messagesConfig;
+    private final Map<String, String> messages = new HashMap<>();
 
     public LanguageManager(DesEnchants plugin) {
         this.plugin = plugin;
+        loadMessages();
     }
 
-    public void reload() {
-        ConfigManager configManager = plugin.getConfigManager();
-        if (configManager != null) {
-            this.messagesConfig = configManager.getConfig("messages.yml");
+    private void loadMessages() {
+        FileConfiguration config = plugin.getConfigManager().getConfig("messages.yml");
+
+        if (config == null) {
+            plugin.getLogger().warning("Could not load messages.yml!");
+            loadDefaultMessages();
+            return;
         }
+
+        // Load all messages from config
+        for (String key : config.getKeys(false)) {
+            messages.put(key, config.getString(key));
+        }
+
+        // Ensure all default messages exist
+        loadDefaultMessages();
     }
 
-    public String getMessage(String path) {
-        if (messagesConfig == null) {
-            return ChatColor.RED + "Messages not loaded!";
-        }
+    private void loadDefaultMessages() {
+        // Default messages if not in config
+        addDefault("prefix", "&8[&6DesEnchants&8] ");
+        addDefault("no-permission", "&cYou don't have permission to do that!");
+        addDefault("player-only", "&cThis command can only be used by players!");
+        addDefault("invalid-command", "&cInvalid command! Use /desenchants help");
+        addDefault("reload-success", "&aPlugin reloaded successfully!");
 
-        String message = messagesConfig.getString(path);
-        if (message == null) {
-            plugin.getLogger().warning("Missing message: " + path);
-            return ChatColor.RED + "Message not found: " + path;
-        }
+        // Enchantment messages
+        addDefault("enchantment-success", "&aSuccessfully applied %enchantment%!");
+        addDefault("enchantment-failed", "&cThe enchantment failed to apply!");
+        addDefault("enchantment-destroyed", "&cThe enchantment destroyed your item!");
+        addDefault("cannot-enchant-item", "&cThis enchantment cannot be applied to this item!");
+        addDefault("max-enchantments-reached", "&cThis item has reached the maximum number of enchantments!");
 
-        return ChatColor.translateAlternateColorCodes('&', message);
+        // Phoenix enchantment
+        addDefault("phoenix-activated", "&6&lPHOENIX! &eYou have been revived!");
+
+        // Cooldown messages
+        addDefault("enchantment-cooldown", "&cThis enchantment is on cooldown for %time% seconds!");
     }
 
-    public String getMessage(String path, Object... replacements) {
-        String message = getMessage(path);
+    private void addDefault(String key, String value) {
+        messages.putIfAbsent(key, value);
+    }
 
-        // Replace placeholders {0}, {1}, etc.
-        for (int i = 0; i < replacements.length; i++) {
-            message = message.replace("{" + i + "}", String.valueOf(replacements[i]));
+    public String getMessage(String key) {
+        return ChatColor.translateAlternateColorCodes('&',
+                messages.getOrDefault("prefix", "") + messages.getOrDefault(key, "&cMissing message: " + key));
+    }
+
+    public String getMessage(String key, String... replacements) {
+        String message = getMessage(key);
+
+        // Replace placeholders
+        for (int i = 0; i < replacements.length; i += 2) {
+            if (i + 1 < replacements.length) {
+                message = message.replace(replacements[i], replacements[i + 1]);
+            }
         }
 
         return message;
     }
 
-    public List<String> getMessageList(String path) {
-        if (messagesConfig == null) {
-            return List.of(ChatColor.RED + "Messages not loaded!");
-        }
-
-        return messagesConfig.getStringList(path).stream()
-                .map(line -> ChatColor.translateAlternateColorCodes('&', line))
-                .collect(Collectors.toList());
+    public void sendMessage(Player player, String key) {
+        player.sendMessage(getMessage(key));
     }
 
-    public void sendMessage(CommandSender sender, String path) {
-        sender.sendMessage(plugin.prefix + getMessage(path));
+    public void sendMessage(Player player, String key, String... replacements) {
+        player.sendMessage(getMessage(key, replacements));
     }
 
-    public void sendMessage(CommandSender sender, String path, Object... replacements) {
-        sender.sendMessage(plugin.prefix + getMessage(path, replacements));
-    }
-
-    public void sendRawMessage(CommandSender sender, String path) {
-        sender.sendMessage(getMessage(path));
-    }
-
-    public void sendRawMessage(CommandSender sender, String path, Object... replacements) {
-        sender.sendMessage(getMessage(path, replacements));
+    public void reload() {
+        messages.clear();
+        loadMessages();
     }
 }

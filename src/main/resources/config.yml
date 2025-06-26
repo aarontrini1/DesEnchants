@@ -1,74 +1,47 @@
-# DesEnchants Configuration File
-# Plugin by YourName
+# DesEnchants Configuration
 
-settings:
-  # Enable debug mode for extra logging
-  debug: false
+# Debug mode - shows extra information in console
+debug-mode: false
 
-  # Maximum number of custom enchantments per item
-  max-enchantments-per-item: 5
+# Maximum number of custom enchantments per item
+max-enchantments: 5
 
-  # Show enchantment descriptions in item lore
-  show-descriptions: true
+# Whether to count vanilla enchantments towards the max limit
+use-vanilla-enchantments: true
 
-  # Currency type for purchasing enchantments (XP_LEVELS or VAULT)
-  currency-type: XP_LEVELS
+# Whether enchanted items should glow
+enchantment-glow: true
 
-  # Enchantment book settings
-  enchant-book-settings:
-    # Show success/destroy rates on books
-    show-rates: true
-    # Format: {enchant} - Success: {success}% Destroy: {destroy}%
-    rate-format: "&7Success: &a{success}% &7Destroy: &c{destroy}%"
+# Success and destroy rates for enchantment books
+enchantment-rates:
+  # Default rates when not specified
+  default:
+    min-success: 50
+    max-success: 80
+    min-destroy: 10
+    max-destroy: 30
 
-# GUI Settings
-gui:
-  # Main menu title
-  main-title: "&5&l✦ Enchantments ✦"
+  # Rates by rarity
+  common:
+    min-success: 70
+    max-success: 90
+    min-destroy: 5
+    max-destroy: 15
 
-  # Category titles
-  armour-title: "&b&lArmour Enchantments"
-  weapons-title: "&c&lWeapon Enchantments"
-  tools-title: "&6&lTool Enchantments"
+  rare:
+    min-success: 50
+    max-success: 70
+    min-destroy: 15
+    max-destroy: 25
 
-  # Enable sounds
-  enable-sounds: true
+  epic:
+    min-success: 30
+    max-success: 50
+    min-destroy: 20
+    max-destroy: 35
 
-  # Sound settings
-  sounds:
-    open-gui: BLOCK_ENCHANTMENT_TABLE_USE
-    click-item: UI_BUTTON_CLICK
-    purchase-success: ENTITY_PLAYER_LEVELUP
-    purchase-fail: ENTITY_VILLAGER_NO
-    enchant-success: BLOCK_ANVIL_USE
-    enchant-fail: ENTITY_ITEM_BREAK
-
-# Enchantment Application Settings
-enchanting:
-  # Allow enchanting in anvil
-  use-anvil: false
-
-  # Drag and drop to enchant
-  drag-drop: true
-
-  # Show particles on successful enchant
-  show-particles: true
-
-  # Particle type
-  particle-type: ENCHANTMENT_TABLE
-
-# Dust Settings (for future implementation)
-dust:
-  # Angel Dust - increases success rate
-  angel-dust:
-    enabled: true
-    # Bonus success rate per dust level
-    bonus-per-level: 5
-    max-level: 10
-
-  # Demon Dust - decreases destroy rate
-  demon-dust:
-    enabled: true
-    # Destroy rate reduction per dust level
-    reduction-per-level: 5
-    max-level: 10
+  legendary:
+    min-success: 20
+    max-success: 40
+    min-destroy: 25
+    max-destroy: 40

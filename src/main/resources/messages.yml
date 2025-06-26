@@ -1,70 +1,29 @@
 # DesEnchants Messages Configuration
 # Use & for color codes
 
-# General Messages
-prefix: "&f[&dEnch&aants&f]&8: &f"
+prefix: "&8[&6DesEnchants&8] "
 no-permission: "&cYou don't have permission to do that!"
-reload-success: "&aPlugin configuration reloaded!"
-unknown-command: "&cUnknown command. Use /de help for help."
+player-only: "&cThis command can only be used by players!"
+invalid-command: "&cInvalid command! Use /desenchants help"
+reload-success: "&aPlugin reloaded successfully!"
 
-# GUI Messages
-gui:
-  # Enchantment purchasing
-  purchase:
-    not-enough-levels: "&cYou need {0} levels to purchase a {1} enchantment!"
-    inventory-full: "&cYour inventory is full!"
-    success: "&aYou received: {0}"
-    no-enchants-available: "&cNo enchantments available for this rarity!"
+# Enchantment Messages
+enchantment-success: "&aSuccessfully applied %enchantment%!"
+enchantment-failed: "&cThe enchantment failed to apply!"
+enchantment-destroyed: "&cThe enchantment destroyed your item!"
+cannot-enchant-item: "&cThis enchantment cannot be applied to this item!"
+max-enchantments-reached: "&cThis item has reached the maximum number of enchantments!"
+enchantment-cooldown: "&cThis enchantment is on cooldown for %time% seconds!"
 
-  # Item info
-  item-lore:
-    click-to-open: "&eClick to open!"
-    cost: "&7Cost: &a{0} Levels"
-    drag-drop: "&eDrag onto item to enchant!"
-    applies-to: "&7Applies to: &f{0}"
-    max-level: "&7Max Level: &f{0}"
-
-# Enchanting Messages
-enchanting:
-  # Success/Failure
-  success: "&aSuccessfully applied {0} to your item!"
-  failed: "&cFailed to apply enchantment!"
-  destroyed: "&4Your item was destroyed!"
-
-  # Validation
-  invalid-item: "&cThis enchantment cannot be applied to that item!"
-  max-enchants: "&cThis item already has the maximum number of enchantments!"
-  already-has: "&cThis item already has that enchantment!"
-
-  # Drag and drop
-  drag-instructions: "&eDrag the enchanted book onto an item to apply it!"
+# Enchantment Specific Messages
+phoenix-activated: "&6&lPHOENIX! &eYou have been revived!"
+lifesteal-activated: "&aYou stole &c%amount% &ahealth!"
+lightning-strike: "&eA lightning bolt strikes your enemy!"
+haste-activated: "&eHaste activated!"
+autosmelt-activated: "&6Items have been auto-smelted!"
 
 # Command Messages
-commands:
-  help:
-    header: "&6&lDesEnchants Commands:"
-    format: "&e{0} &7- {1}"
-
-  give:
-    usage: "&cUsage: /de give <player> <enchantment> <level>"
-    player-not-found: "&cPlayer not found!"
-    enchant-not-found: "&cEnchantment not found!"
-    invalid-level: "&cInvalid level! Max level is {0}"
-    success: "&aGave {0} to {1}!"
-    received: "&aYou received {0}!"
-
-  list:
-    header: "&6&lAvailable Enchantments:"
-    format: "&e{0} &7({1})"
-    no-enchants: "&cNo enchantments are currently loaded!"
-
-# Cooldown Messages
-cooldown:
-  active: "&cThis enchantment is on cooldown for {0}!"
-  ready: "&aEnchantment ready to use!"
-
-# Error Messages
-errors:
-  something-went-wrong: "&cSomething went wrong! Please contact an administrator."
-  not-holding-item: "&cYou must be holding an item!"
-  invalid-enchant-book: "&cThat is not a valid enchantment book!"
+give-success: "&aGave %amount%x %item% to %player%"
+give-received: "&aYou received %amount%x %item%"
+list-header: "&6&l---- Enchantment List ----"
+list-format: "&e%enchantment% &7- &f%description%"

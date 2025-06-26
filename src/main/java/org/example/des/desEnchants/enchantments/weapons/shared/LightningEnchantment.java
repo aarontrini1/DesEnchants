@@ -5,6 +5,8 @@ import org.bukkit.Material;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Event;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.inventory.ItemStack;
 import org.example.des.desEnchants.DesEnchants;
@@ -14,32 +16,28 @@ import org.example.des.desEnchants.core.enchantment.EnchantmentTarget;
 
 import java.util.Arrays;
 
-public class LightningEnchantment extends CustomEnchantment {
+public class LightningEnchantment extends CustomEnchantment implements Listener {
 
     public LightningEnchantment(DesEnchants plugin) {
-        super(plugin, "lightning", "Lightning", 3, EnchantmentRarity.LEGENDARY, EnchantmentTarget.ALL_WEAPONS);
-
-        this.cooldown = 5; // 5 second cooldown
-        this.description = Arrays.asList(
+        super(plugin, "lightning", "Lightning", 3, EnchantmentRarity.LEGENDARY, EnchantmentTarget.WEAPON, Arrays.asList(
                 "§7Chance to strike your",
                 "§7enemies with lightning."
-        );
+        ));
+
     }
 
-    @Override
     public String getLevelSpecificDescription(int level) {
         int chance = level * 10; // 10%, 20%, 30%
         return "§7Chance: §a" + chance + "% §7Damage: §a" + (level * 2) + " HP";
     }
 
-    @Override
     public boolean canApplyTo(ItemStack item) {
         Material type = item.getType();
         return type.name().endsWith("_SWORD") || type.name().endsWith("_AXE")
                 || type == Material.BOW || type == Material.TRIDENT;
     }
 
-    @Override
+    @EventHandler
     public boolean onTrigger(Event event, Player player, ItemStack item, int level) {
         if (!(event instanceof EntityDamageByEntityEvent damageEvent)) {
             return false;
@@ -76,5 +74,10 @@ public class LightningEnchantment extends CustomEnchantment {
         applyCooldown(player);
 
         return true;
+    }
+
+    @Override
+    public void initialize() {
+
     }
 }

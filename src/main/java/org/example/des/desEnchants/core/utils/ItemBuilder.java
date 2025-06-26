@@ -1,6 +1,6 @@
 package org.example.des.desEnchants.core.utils;
 
-import org.bukkit.ChatColor;
+import net.md_5.bungee.api.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.inventory.ItemFlag;
@@ -13,7 +13,7 @@ import java.util.List;
 
 public class ItemBuilder {
 
-    private final ItemStack item;
+    private ItemStack item;
     private ItemMeta meta;
 
     public ItemBuilder(Material material) {
@@ -26,34 +26,34 @@ public class ItemBuilder {
         this.meta = this.item.getItemMeta();
     }
 
-    public ItemBuilder amount(int amount) {
+    public ItemBuilder setAmount(int amount) {
         item.setAmount(amount);
         return this;
     }
 
-    public ItemBuilder name(String name) {
+    public ItemBuilder setName(String name) {
         if (meta != null) {
             meta.setDisplayName(ChatColor.translateAlternateColorCodes('&', name));
         }
         return this;
     }
 
-    public ItemBuilder lore(String... lines) {
-        return lore(Arrays.asList(lines));
-    }
-
-    public ItemBuilder lore(List<String> lines) {
+    public ItemBuilder setLore(List<String> lore) {
         if (meta != null) {
-            List<String> lore = new ArrayList<>();
-            for (String line : lines) {
-                lore.add(ChatColor.translateAlternateColorCodes('&', line));
+            List<String> coloredLore = new ArrayList<>();
+            for (String line : lore) {
+                coloredLore.add(ChatColor.translateAlternateColorCodes('&', line));
             }
-            meta.setLore(lore);
+            meta.setLore(coloredLore);
         }
         return this;
     }
 
-    public ItemBuilder addLoreLine(String line) {
+    public ItemBuilder setLore(String... lore) {
+        return setLore(Arrays.asList(lore));
+    }
+
+    public ItemBuilder addLore(String line) {
         if (meta != null) {
             List<String> lore = meta.hasLore() ? meta.getLore() : new ArrayList<>();
             lore.add(ChatColor.translateAlternateColorCodes('&', line));
@@ -62,73 +62,30 @@ public class ItemBuilder {
         return this;
     }
 
-    public ItemBuilder enchant(Enchantment enchantment, int level) {
-        if (meta != null) {
-            meta.addEnchant(enchantment, level, true);
+    public ItemBuilder addEnchantment(Enchantment enchantment, int level) {
+        item.addUnsafeEnchantment(enchantment, level);
+        return this;
+    }
+
+    public ItemBuilder setGlow(boolean glow) {
+        if (glow) {
+            if (meta != null) {
+                meta.addEnchant(Enchantment.UNBREAKING, 1, true);
+                meta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
+            }
         }
         return this;
     }
 
-    public ItemBuilder flag(ItemFlag... flags) {
+    public ItemBuilder addItemFlags(ItemFlag... flags) {
         if (meta != null) {
             meta.addItemFlags(flags);
         }
         return this;
     }
 
-    public ItemBuilder glow() {
-        if (meta != null) {
-            meta.addEnchant(Enchantment.UNBREAKING, 1, true);
-            meta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
-        }
-        return this;
-    }
-
-    public ItemBuilder unbreakable() {
-        if (meta != null) {
-            meta.setUnbreakable(true);
-            meta.addItemFlags(ItemFlag.HIDE_UNBREAKABLE);
-        }
-        return this;
-    }
-
-    public ItemBuilder hideAttributes() {
-        if (meta != null) {
-            meta.addItemFlags(ItemFlag.HIDE_ATTRIBUTES);
-        }
-        return this;
-    }
-
-    public ItemBuilder hideAll() {
-        if (meta != null) {
-            meta.addItemFlags(ItemFlag.values());
-        }
-        return this;
-    }
-
-    public ItemBuilder durability(short durability) {
-        item.setDurability(durability);
-        return this;
-    }
-
-    public ItemBuilder type(Material material) {
-        item.setType(material);
-        return this;
-    }
-
     public ItemStack build() {
-        if (meta != null) {
-            item.setItemMeta(meta);
-        }
+        item.setItemMeta(meta);
         return item;
-    }
-
-    // Static utility methods for quick item creation
-    public static ItemStack quick(Material material, String name) {
-        return new ItemBuilder(material).name(name).build();
-    }
-
-    public static ItemStack quick(Material material, String name, String... lore) {
-        return new ItemBuilder(material).name(name).lore(lore).build();
     }
 }

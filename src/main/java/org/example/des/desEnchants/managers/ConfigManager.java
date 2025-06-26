@@ -8,7 +8,6 @@ import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.logging.Level;
 
 public class ConfigManager {
 
@@ -16,50 +15,54 @@ public class ConfigManager {
     private final Map<String, FileConfiguration> configs = new HashMap<>();
     private final Map<String, File> configFiles = new HashMap<>();
 
+    // Config options
+    private boolean debugMode;
+    private int maxEnchantments;
+    private boolean useVanillaEnchantments;
+    private boolean enchantmentGlow;
+
     public ConfigManager(DesEnchants plugin) {
         this.plugin = plugin;
-        loadAllConfigs();
     }
 
-    private void loadAllConfigs() {
-        // Ensure directories exist
-        createDirectories();
+    public void loadConfigs() {
+        // Load main config
+        loadConfig("config.yml");
 
-        // Load all configuration files
+        // Load other configs
+        loadConfig("enchantments.yml");
         loadConfig("messages.yml");
-        loadConfig("enchantments/armor.yml");
-        loadConfig("enchantments/weapons.yml");
-        loadConfig("enchantments/tools.yml");
-    }
+        loadConfig("guis.yml");
 
-    private void createDirectories() {
-        File enchantmentsDir = new File(plugin.getDataFolder(), "enchantments");
-        if (!enchantmentsDir.exists()) {
-            enchantmentsDir.mkdirs();
-        }
+        // Load values
+        loadConfigValues();
     }
 
     private void loadConfig(String fileName) {
         File file = new File(plugin.getDataFolder(), fileName);
 
-        // Save default if doesn't exist
         if (!file.exists()) {
-            try {
-                plugin.saveResource(fileName, false);
-            } catch (Exception e) {
-                plugin.getLogger().log(Level.WARNING, "Could not save default config: " + fileName, e);
-                return;
-            }
+            plugin.saveResource(fileName, false);
         }
 
-        // Load the configuration
         FileConfiguration config = YamlConfiguration.loadConfiguration(file);
         configs.put(fileName, config);
         configFiles.put(fileName, file);
     }
 
-    public FileConfiguration getConfig(String fileName) {
-        return configs.get(fileName);
+    private void loadConfigValues() {
+        FileConfiguration config = getConfig("config.yml");
+
+        debugMode = config.getBoolean("debug-mode", false);
+        maxEnchantments = config.getInt("max-enchantments", 5);
+        useVanillaEnchantments = config.getBoolean("use-vanilla-enchantments", true);
+        enchantmentGlow = config.getBoolean("enchantment-glow", true);
+    }
+
+    public void reloadConfigs() {
+        configs.clear();
+        configFiles.clear();
+        loadConfigs();
     }
 
     public void saveConfig(String fileName) {
@@ -70,39 +73,30 @@ public class ConfigManager {
             try {
                 config.save(file);
             } catch (IOException e) {
-                plugin.getLogger().log(Level.SEVERE, "Could not save config file: " + fileName, e);
+                plugin.getLogger().severe("Could not save config: " + fileName);
+                e.printStackTrace();
             }
         }
     }
 
-    public void saveAll() {
-        for (String fileName : configs.keySet()) {
-            saveConfig(fileName);
-        }
+    public FileConfiguration getConfig(String fileName) {
+        return configs.get(fileName);
     }
 
-    public void reload() {
-        // Clear and reload all configs
-        configs.clear();
-        configFiles.clear();
-        plugin.reloadConfig();
-        loadAllConfigs();
-    }
-
-    // Main config convenience methods
-    public FileConfiguration getMainConfig() {
-        return plugin.getConfig();
-    }
-
+    // Getters for config values
     public boolean isDebugMode() {
-        return getMainConfig().getBoolean("settings.debug", false);
+        return debugMode;
     }
 
-    public int getMaxEnchantmentsPerItem() {
-        return getMainConfig().getInt("settings.max-enchantments-per-item", 5);
+    public int getMaxEnchantments() {
+        return maxEnchantments;
     }
 
-    public boolean showEnchantmentDescriptions() {
-        return getMainConfig().getBoolean("settings.show-descriptions", true);
+    public boolean useVanillaEnchantments() {
+        return useVanillaEnchantments;
+    }
+
+    public boolean isEnchantmentGlow() {
+        return enchantmentGlow;
     }
 }

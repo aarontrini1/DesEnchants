@@ -3,121 +3,81 @@ package org.example.des.desEnchants.core.enchantment;
 import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
 
+import java.util.*;
+
 public enum EnchantmentTarget {
-    // Armor pieces
-    HELMET {
-        @Override
-        public boolean isValidItem(ItemStack item) {
-            Material type = item.getType();
-            return type.name().endsWith("_HELMET") || type == Material.TURTLE_HELMET;
-        }
-    },
-    CHESTPLATE {
-        @Override
-        public boolean isValidItem(ItemStack item) {
-            Material type = item.getType();
-            return type.name().endsWith("_CHESTPLATE") || type == Material.ELYTRA;
-        }
-    },
-    LEGGINGS {
-        @Override
-        public boolean isValidItem(ItemStack item) {
-            return item.getType().name().endsWith("_LEGGINGS");
-        }
-    },
-    BOOTS {
-        @Override
-        public boolean isValidItem(ItemStack item) {
-            return item.getType().name().endsWith("_BOOTS");
-        }
-    },
-    ALL_ARMOR {
-        @Override
-        public boolean isValidItem(ItemStack item) {
-            return HELMET.isValidItem(item) || CHESTPLATE.isValidItem(item) ||
-                    LEGGINGS.isValidItem(item) || BOOTS.isValidItem(item);
-        }
-    },
 
-    // Weapons
-    SWORD {
-        @Override
-        public boolean isValidItem(ItemStack item) {
-            return item.getType().name().endsWith("_SWORD");
-        }
-    },
-    AXE {
-        @Override
-        public boolean isValidItem(ItemStack item) {
-            return item.getType().name().endsWith("_AXE");
-        }
-    },
-    BOW {
-        @Override
-        public boolean isValidItem(ItemStack item) {
-            Material type = item.getType();
-            return type == Material.BOW || type == Material.CROSSBOW;
-        }
-    },
-    TRIDENT {
-        @Override
-        public boolean isValidItem(ItemStack item) {
-            return item.getType() == Material.TRIDENT;
-        }
-    },
-    ALL_WEAPONS {
-        @Override
-        public boolean isValidItem(ItemStack item) {
-            return SWORD.isValidItem(item) || AXE.isValidItem(item) ||
-                    BOW.isValidItem(item) || TRIDENT.isValidItem(item);
-        }
-    },
+    ALL("All Items", material -> true),
 
-    // Tools
-    PICKAXE {
-        @Override
-        public boolean isValidItem(ItemStack item) {
-            return item.getType().name().endsWith("_PICKAXE");
-        }
-    },
-    SHOVEL {
-        @Override
-        public boolean isValidItem(ItemStack item) {
-            return item.getType().name().endsWith("_SHOVEL");
-        }
-    },
-    HOE {
-        @Override
-        public boolean isValidItem(ItemStack item) {
-            return item.getType().name().endsWith("_HOE");
-        }
-    },
-    ALL_TOOLS {
-        @Override
-        public boolean isValidItem(ItemStack item) {
-            return PICKAXE.isValidItem(item) || AXE.isValidItem(item) ||
-                    SHOVEL.isValidItem(item) || HOE.isValidItem(item);
-        }
-    };
+    ARMOR("Armor", material ->
+            material.name().endsWith("_HELMET") ||
+                    material.name().endsWith("_CHESTPLATE") ||
+                    material.name().endsWith("_LEGGINGS") ||
+                    material.name().endsWith("_BOOTS")),
 
-    public abstract boolean isValidItem(ItemStack item);
+    HELMET("Helmet", material -> material.name().endsWith("_HELMET")),
+
+    CHESTPLATE("Chestplate", material -> material.name().endsWith("_CHESTPLATE")),
+
+    LEGGINGS("Leggings", material -> material.name().endsWith("_LEGGINGS")),
+
+    BOOTS("Boots", material -> material.name().endsWith("_BOOTS")),
+
+    SWORD("Sword", material -> material.name().endsWith("_SWORD")),
+
+    AXE("Axe", material -> material.name().endsWith("_AXE")),
+
+    WEAPON("Weapon", material ->
+            material.name().endsWith("_SWORD") ||
+                    material.name().endsWith("_AXE")),
+
+    TOOL("Tool", material ->
+            material.name().endsWith("_PICKAXE") ||
+                    material.name().endsWith("_SHOVEL") ||
+                    material.name().endsWith("_HOE") ||
+                    material.name().endsWith("_AXE")),
+
+    PICKAXE("Pickaxe", material -> material.name().endsWith("_PICKAXE")),
+
+    SHOVEL("Shovel", material -> material.name().endsWith("_SHOVEL")),
+
+    HOE("Hoe", material -> material.name().endsWith("_HOE")),
+
+    BOW("Bow", material ->
+            material == Material.BOW ||
+                    material == Material.CROSSBOW),
+
+    ELYTRA("Elytra", material -> material == Material.ELYTRA),
+
+    FISHING_ROD("Fishing Rod", material -> material == Material.FISHING_ROD),
+
+    TRIDENT("Trident", material -> material == Material.TRIDENT),
+
+    SHIELD("Shield", material -> material == Material.SHIELD);
+
+    private final String displayName;
+    private final MaterialPredicate predicate;
+
+    EnchantmentTarget(String displayName, MaterialPredicate predicate) {
+        this.displayName = displayName;
+        this.predicate = predicate;
+    }
 
     public String getDisplayName() {
-        return switch (this) {
-            case HELMET -> "Helmets";
-            case CHESTPLATE -> "Chestplates";
-            case LEGGINGS -> "Leggings";
-            case BOOTS -> "Boots";
-            case ALL_ARMOR -> "All Armor";
-            case SWORD -> "Swords";
-            case AXE -> "Axes";
-            case BOW -> "Bows & Crossbows";
-            case TRIDENT -> "Tridents";
-            case ALL_WEAPONS -> "All Weapons";
-            case PICKAXE -> "Pickaxes";
-            case SHOVEL -> "Shovels";
-            case HOE -> "Hoes";
-            case ALL_TOOLS -> "All Tools";
-        };
+        return displayName;
+    }
+
+    public boolean canEnchant(ItemStack item) {
+        if (item == null) return false;
+        return predicate.test(item.getType());
+    }
+
+    public boolean canEnchant(Material material) {
+        return predicate.test(material);
+    }
+
+    @FunctionalInterface
+    private interface MaterialPredicate {
+        boolean test(Material material);
     }
 }
